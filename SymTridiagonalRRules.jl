@@ -19,8 +19,8 @@ ChainRulesTestUtils.test_frule(SymTridiagonal, [0.1,0.2,0.3],ones(2))
 function ChainRulesCore.rrule(::Type{SymTridiagonal}, dv::V, ev::V) where V <: AbstractVector
     Ω = SymTridiagonal(dv,ev)
     function SymTridiagonal_pullback(ΔΩ)
-        Δdv = @thunk(diag(ΔΩ))
-        Δev = @thunk(diag(ΔΩ,1))
+        Δdv = @thunk(diag(unthunk(ΔΩ)))
+        Δev = @thunk(diag(unthunk(ΔΩ),1))
         return (NoTangent(), Δdv, Δev)
     end
     return (Ω, SymTridiagonal_pullback)
