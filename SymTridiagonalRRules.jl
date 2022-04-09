@@ -4,7 +4,7 @@ function ChainRulesCore.frule((_, Δdv, Δev), ::Type{SymTridiagonal}, dv::V, ev
     return SymTridiagonal(dv,ev), SymTridiagonal(Δdv, Δev)
 end
 
-ChainRulesTestUtils.test_frule(SymTridiagonal, [0.1,0.2,0.3],ones(2))
+test_frule(SymTridiagonal, [0.1,0.2,0.3],ones(2))
 
 function ChainRulesCore.rrule(::Type{SymTridiagonal}, dv::V, ev::V) where V <: AbstractVector
     Ω = SymTridiagonal(dv,ev)
