@@ -14,11 +14,12 @@ end
 banded_eigvals([0.0, 1, 2])
 
 jacobian(banded_eigvals, [0.0, 1, 2])
+h = 0.00001
 
 (banded_eigvals([0.0, 1 + h, 2]) - banded_eigvals([0.0, 1, 2])) / h
 
-h = 0.00001
-(banded_det([0 + h, 1, 2]) - banded_det([0, 1, 2])) / h
-(banded_det([0, 1 + h, 2]) - banded_det([0, 1, 2])) / h
-(banded_det([0, 1, 2 + h]) - banded_det([0, 1, 2])) / h
+
+(banded_eigvals([0 + h, 1, 2]) - banded_eigvals([0, 1, 2])) / h
+(banded_eigvals([0, 1 + h, 2]) - banded_eigvals([0, 1, 2])) / h
+(banded_eigvals([0, 1, 2 + h]) - banded_eigvals([0, 1, 2])) / h
 
