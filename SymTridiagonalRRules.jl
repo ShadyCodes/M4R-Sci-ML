@@ -55,8 +55,13 @@ function eigen_rev!(A::SymTridiagonal, λ, U, ∂λ, ∂U)
     ∂λ isa AbstractZero && ∂U isa AbstractZero && return ∂λ + ∂U
     Ā = similar(parent(A), eltype(U))
     tmp = ∂U
+<<<<<<< HEAD
     Ā = Matrix(Ā)
     if ∂U isa AbstractZero
+=======
+    if ∂U isa AbstractZero
+        Ā = Matrix(Ā)
+>>>>>>> 8073e681e2a78245a2981a77983e8a42a250dbb1
         mul!(Ā, U, real.(∂λ) .* U')
     else
         _eigen_norm_phase_rev!(∂U, A, U)
@@ -66,13 +71,18 @@ function eigen_rev!(A::SymTridiagonal, λ, U, ∂λ, ∂U)
         mul!(tmp, ∂K, U')
         mul!(Ā, U, tmp)
     end
+<<<<<<< HEAD
     ∂A = SymTridiagonal(diag(Ā), (diag(Ā,1) + diag(Ā,-1))/2)
+=======
+    ∂A = SymTridiagonal(diag(Ā), diag(Ā,1))
+>>>>>>> 8073e681e2a78245a2981a77983e8a42a250dbb1
     return ∂A
 end
 
 function _eigen_norm_phase_rev!(∂V, A::SymTridiagonal, V)
     ϵ = sqrt(eps(real(eltype(V))))
     @inbounds for i in axes(V, 2)
+<<<<<<< HEAD
         k = size(A,1)
         v = @view V[:, i]
         vₖ = real(v[k])
@@ -80,6 +90,14 @@ function _eigen_norm_phase_rev!(∂V, A::SymTridiagonal, V)
             ∂v = @view ∂V[:, i]
             ∂c = dot(v, ∂v)
             ∂v[k] -= im * (imag(∂c) / vₖ)
+=======
+        v = @view V[:, i]
+        vₖ = real(v[1])
+        if abs(vₖ) > ϵ
+            ∂v = @view ∂V[:, i]
+            ∂c = dot(v, ∂v)
+            ∂v[1] -= im * (imag(∂c) / vₖ)
+>>>>>>> 8073e681e2a78245a2981a77983e8a42a250dbb1
         end
     end
     return ∂V
