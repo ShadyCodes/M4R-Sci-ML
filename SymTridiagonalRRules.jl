@@ -50,7 +50,7 @@ function  ChainRulesCore.rrule(
     eigen_pullback(ΔF::AbstractZero) = (NoTangent(), ΔF)
     return F, eigen_pullback
 end
-
+ 
 function eigen_rev!(A::SymTridiagonal, λ, U, ∂λ, ∂U)
     ∂λ isa AbstractZero && ∂U isa AbstractZero && return ∂λ + ∂U
     Ā = similar(parent(A), eltype(U))
@@ -66,11 +66,14 @@ function eigen_rev!(A::SymTridiagonal, λ, U, ∂λ, ∂U)
         mul!(tmp, ∂K, U')
         mul!(Ā, U, tmp)
     end
-    ∂A = SymTridiagonal(diag(Ā), (diag(Ā,1) + diag(Ā,-1))/2)
+    ∂A = SymTridiagonal(diag(Ā), (diag(Ā,1) + diag(Ā,-1)))
     return ∂A
 end
 
-function _eigen_norm_phase_rev!(∂V, A::SymTridiagonal, V)
+_eigen_norm_phase_rev!(∂V, ::SymTridiagonal{T, Vector{T}}, V) where {T<:Real} = ∂V
+
+# Unecessary as I believe we are considering only real symmetric matrices
+function _eigen_norm_phase_rev!(∂V, ::SymTridiagonal{T, Vector{T}}, V) where {T<:Complex}
     ϵ = sqrt(eps(real(eltype(V))))
     @inbounds for i in axes(V, 2)
         k = size(A,1)
