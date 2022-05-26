@@ -1,4 +1,4 @@
-using Zygote, LinearAlgebra, ChainRules, ChainRulesCore, ChainRulesTestUtils
+using LinearAlgebra, ChainRules, ChainRulesCore
 
 function ChainRulesCore.frule((_, Δdv, Δev), ::Type{SymTridiagonal}, dv::V, ev::V) where V <: AbstractVector
     return SymTridiagonal(dv,ev), SymTridiagonal(Δdv, Δev)
@@ -66,12 +66,11 @@ function eigen_rev!(A::SymTridiagonal, λ, U, ∂λ, ∂U)
         mul!(tmp, ∂K, U')
         mul!(Ā, U, tmp)
     end
-    ∂A = SymTridiagonal(diag(Ā), (diag(Ā,1) + diag(Ā,-1)))
+    ∂A = SymTridiagonal(diag(Ā), (diag(Ā,1) + diag(Ā,-1))/2)
     return ∂A
 end
 
 _eigen_norm_phase_rev!(∂V, ::SymTridiagonal{T, Vector{T}}, V) where {T<:Real} = ∂V
-
 # Unecessary as I believe we are considering only real symmetric matrices
 function _eigen_norm_phase_rev!(∂V, ::SymTridiagonal{T, Vector{T}}, V) where {T<:Complex}
     ϵ = sqrt(eps(real(eltype(V))))
@@ -87,12 +86,3 @@ function _eigen_norm_phase_rev!(∂V, ::SymTridiagonal{T, Vector{T}}, V) where {
     end
     return ∂V
 end
-
-A = SymTridiagonal([0.1,0.2,0.3],ones(2))
-test_rrule(eigvals, A)
-test_rrule(eigen, A)
-
-A = c -> SymTridiagonal([c[1],c[1],c[2]+2c[3], c[2]], ones(3));
-λ = c -> eigvals(A(c))
-Zygote.jacobian(A, [0.1,0.2,0.3])
-Zygote.jacobian(λ, [0.1,0.2,0.3])   
