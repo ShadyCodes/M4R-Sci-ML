@@ -26,47 +26,24 @@ for i = 1:999
 end
 
 
-
-### Reverse mode attempts
-using Zygote, SpecialMatrices, ChainRules, ChainRulesCore
+### Reverse mode
+using Zygote, ChainRules, ChainRulesCore
 include("symtridiagonal.jl")
 
-# Pullback for the Polynomial constructor (in case of future use)
-function ChainRulesCore.rrule(::Type{<:Polynomial}, x::AbstractVector)
-    p = Polynomial(x)
-    function Polynomial_pullback(p̄)
-        Δp = unthunk(p̄)
-        Δx = Δp.coeffs
-        return (NoTangent(), Δx)
-    end
-    return (p, Polynomial_pullback)
-end
 
-# Pullback for the Vandermonde constructor
-function ChainRulesCore.rrule(::Type{Vandermonde}, c::AbstractVector{T}) where T
-    V = Vandermonde(c)
-    function Vandermonde_pullback(V̄)
-        ΔV = unthunk(V̄)
-        Δc = ΔV[:,2]
-        return (NoTangent(), Δc)
-    end
-    return (V, Vandermonde_pullback)
-end
-
-
-# Closest attempt at function to generate banded matrix from polynomial coefficients
 function banded_eigvals_rev(x)
-    f = collect(-10.0:10.0) # set the range
-    V = Vandermonde(x)   # construct Vandermonde matrix using SpecialMatrices.jl
-    M = # what next?
+    f = -10.0:10.0 # set the range
+    V = f .^ (0:length(x)-1)'
+    M = V*x
+    M = SymTridiagonal(M, ones(length(f)-1))
     eigvals(M)  # compute the eigenvalues
 end
 
 function update_weights_rev(x, y, lrate)
     function loss(x)
-        return norm(banded_eigvals_rev(x) - y)  # norm of the difference between the eigenvalues and the target
+        return norm(banded_eigvals_rev(x) - y)
     end
-    x .-= Zygote.gradient(loss, x) .* lrate
+    x .-= Zygote.gradient(loss, x)[1] .* lrate
 end
 
 y = banded_eigvals([0,0,1])
@@ -74,10 +51,3 @@ x = [0.0,0.0,0.0]
 for i = 1:999
     x = update_weights_rev(x, y, 0.001)
 end
-
-function test2(x)
-    V = Vandermonde(x)
-    norm(V)
-end
-
-Zygote.gradient(test2, [0.,0.,4.])
