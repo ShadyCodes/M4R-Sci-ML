@@ -4,8 +4,6 @@ function ChainRulesCore.frule((_, Δdv, Δev), ::Type{SymTridiagonal}, dv::V, ev
     return SymTridiagonal(dv,ev), SymTridiagonal(Δdv, Δev)
 end
 
-test_frule(SymTridiagonal, [0.1,0.2,0.3],ones(2))
-
 function ChainRulesCore.rrule(::Type{SymTridiagonal}, dv::V, ev::V) where V <: AbstractVector
     Ω = SymTridiagonal(dv,ev)
     function SymTridiagonal_pullback(Ω̄)
@@ -16,8 +14,6 @@ function ChainRulesCore.rrule(::Type{SymTridiagonal}, dv::V, ev::V) where V <: A
     end
     return (Ω, SymTridiagonal_pullback)
 end
-
-test_rrule(SymTridiagonal, [0.1,0.2,0.3],ones(2))
 
 function ChainRulesCore.rrule(
     ::typeof(eigvals),
@@ -86,3 +82,7 @@ function _eigen_norm_phase_rev!(∂V, ::SymTridiagonal{T, Vector{T}}, V) where {
     end
     return ∂V
 end
+
+using Zygote
+λ = c -> norm(eigvals(Symmetric([c[1] 1.0; 1.0 c[2]])) - [1,2])
+Zygote.gradient(λ, [1.0, 3.0])
