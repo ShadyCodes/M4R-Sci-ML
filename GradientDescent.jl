@@ -28,10 +28,10 @@ end
 
 
 ### Reverse mode attempts
-using Zygote, Polynomials, ChainRules, ChainRulesCore
+using Zygote, SpecialMatrices, ChainRules, ChainRulesCore
 include("symtridiagonal.jl")
 
-# Pullback for the Polynomial constructor
+# Pullback for the Polynomial constructor (in case of future use)
 function ChainRulesCore.rrule(::Type{<:Polynomial}, x::AbstractVector)
     p = Polynomial(x)
     function Polynomial_pullback(p̄)
@@ -42,13 +42,23 @@ function ChainRulesCore.rrule(::Type{<:Polynomial}, x::AbstractVector)
     return (p, Polynomial_pullback)
 end
 
+# Pullback for the Vandermonde constructor
+function ChainRulesCore.rrule(::Type{Vandermonde}, c::AbstractVector{T}) where T
+    V = Vandermonde(c)
+    function Vandermonde_pullback(V̄)
+        ΔV = unthunk(V̄)
+        Δc = ΔV[:,2]
+        return (NoTangent(), Δc)
+    end
+    return (V, Vandermonde_pullback)
+end
+
+
 # Closest attempt at function to generate banded matrix from polynomial coefficients
 function banded_eigvals_rev(x)
     f = collect(-10.0:10.0) # set the range
-    p = Polynomial(x)   # construct polynomial using Polynomials.jl
-    M = Matrix(Diagonal(f)) # diagonal matrix of the range (converted to Matrix as polynomial doesn't work with Diagonal)
-    M = p(M)    # apply polynomial to diagonal
-    M = SymTridiagonal(diag(M), ones(length(f)-1))  # create the SymTridiagonal matrix from the resulting diagonal
+    V = Vandermonde(x)   # construct Vandermonde matrix using SpecialMatrices.jl
+    M = # what next?
     eigvals(M)  # compute the eigenvalues
 end
 
@@ -64,3 +74,10 @@ x = [0.0,0.0,0.0]
 for i = 1:999
     x = update_weights_rev(x, y, 0.001)
 end
+
+function test2(x)
+    V = Vandermonde(x)
+    norm(V)
+end
+
+Zygote.gradient(test2, [0.,0.,4.])
