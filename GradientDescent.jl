@@ -1,4 +1,4 @@
-using ForwardDiff, LinearAlgebra
+using ForwardDiff, LinearAlgebraend
 import ForwardDiff: gradient
 
 ### The below approach does not work with Zygote as Zygote does not support mutating arrays
@@ -12,17 +12,19 @@ function banded_eigvals(x) # x is a vector of polynomial coefficients
     eigvals(M)
 end
 
-function update_weights(x, y, lrate)
+function update_weights(x, y, γ)
     function loss(x)
         return norm(banded_eigvals(x) - convert(Vector{eltype(x)}, y))
     end
-    x .-= gradient(loss, x) .* lrate
+    ∇f = ForwardDiff.gradient(loss, x)
+    x .-= ∇f .* γ
 end
 
 y = banded_eigvals([0,0,1])
 x = [0.0,0.0,0.0]
 for i = 1:999
     x = update_weights(x, y, 0.001)
+    println(norm(banded_eigvals(x)-y))
 end
 
 
@@ -39,15 +41,21 @@ function banded_eigvals_rev(x)
     eigvals(M)  # compute the eigenvalues
 end
 
-function update_weights_rev(x, y, lrate)
+# backtracking line search
+function update_weights_rev(x, y; γ=0.001, α=0.05, β=0.03)
     function loss(x)
-        return norm(banded_eigvals_rev(x) - y)
+        return n
     end
-    x .-= Zygote.gradient(loss, x)[1] .* lrate
+    ∇f = Zygote.gradient(loss,x)[1]
+    while norm(banded_eigvals_rev(x) - y) - norm(banded_eigvals_rev(x .- ∇f .* γ) - y) < α * γ * (∇f)' * -(∇f)
+        γ *= β
+    end
+    x .-= ∇f .* γ
 end
 
-y = banded_eigvals([0,0,1])
-x = [0.0,0.0,0.0]
-for i = 1:999
-    x = update_weights_rev(x, y, 0.001)
-end
+y = banded_eigvals_rev([3.,0.,2.])
+x = [0.0,0.0,0]
+for i = 1:9999
+    x = update_weights_rev(x, y, γ=0.0001)
+    println(norm(banded_eigvals_rev(x) - y))
+end 
