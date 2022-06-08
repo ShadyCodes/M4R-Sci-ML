@@ -60,23 +60,75 @@ function forward_run(target; R=10)
     end 
 end
 
+MAX_POLYDEG = 20  
+
 suite = BenchmarkGroup()
 suite["Rev"] = BenchmarkGroup()
 suite["For"] = BenchmarkGroup()
-for R = 2:4
-    suite["Rev"]["Matrix size = " * string(R)] = BenchmarkGroup()
-    suite["For"]["Matrix size = " * string(R)] = BenchmarkGroup()
-    for size = 2:4
-        suite["Rev"]["Matrix size = " * string(R)]["Polynomial degree = " * string(size-1)] = @benchmarkable rev_run($(rand(size) .* 10), R=$R)
-        suite["For"]["Matrix size = " * string(R)]["Polynomial degree = " * string(size-1)] = @benchmarkable forward_run($(rand(size) .* 10), R=$R)
-    end
+
+for size = 2:MAX_POLYDEG
+    suite["Rev"]["Pdeg = " * string(size-1)] = @benchmarkable rev_run(target) setup=(target  = rand($size).*10)
+    suite["For"]["Pdeg = " * string(size-1)] = @benchmarkable forward_run(target) setup=(target  = rand($size).*10)
 end
-#tune!(suite)
+tune!(suite)
 results = BenchmarkTools.run(suite, verbose=true)
 
-medians = zeros(3, 3)
-for R = 2:4
-    for size = 2:4
-        medians[R-1, size-1] = median(results["Rev"]["Matrix size = " * string(R)]["Polynomial degree = " * string(size-1)]).time
-    end
+medians = zeros(MAX_POLYDEG-1)
+for size = 2:MAX_POLYDEG
+    medians[size-1] = median(results["Rev"]["Pdeg = " * string(size-1)]).time
+ end
+
+medians_for = zeros(MAX_POLYDEG-1)
+for size = 2:MAX_POLYDEG
+    medians_for[size-1] = median(results["For"]["Pdeg = " * string(size-1)]).time
 end
+
+mins = zeros(MAX_POLYDEG-1)
+for size = 2:MAX_POLYDEG
+    mins[size-1] = minimum(results["Rev"]["Pdeg = " * string(size-1)]).time
+ end
+
+mins_for = zeros(MAX_POLYDEG-1)
+for size = 2:MAX_POLYDEG
+    mins_for[size-1] = minimum(results["For"]["Pdeg = " * string(size-1)]).time
+end
+
+
+l = @layout [a b]
+p1 = plot(
+    medians_for ./ 10^9, 
+    xlim=[1, MAX_POLYDEG-1],
+    xlabel="Polynomial degree",
+    ylabel="Time (ns)", 
+    title="ForwardDiff Median Time",
+    legend=false
+)
+
+p2 = plot(
+    medians ./ 10^9, 
+    xlim=[1, MAX_POLYDEG-1],
+    xlabel="Polynomial degree",
+    title="Zygote Median Time",
+    legend=false
+)
+
+plot(p1, p2, layout=l, size=(1200,500), link=:y, margin=7Plots.mm)
+
+p1 = plot(
+    mins_for ./ 10^9, 
+    xlim=[1, MAX_POLYDEG-1],
+    xlabel="Polynomial degree",
+    ylabel="Time (ns)", 
+    title="ForwardDiff Minimum Time",
+    legend=false
+)
+
+p2 = plot(
+    mins ./ 10^9, 
+    xlim=[1, MAX_POLYDEG-1],
+    xlabel="Polynomial degree",
+    title="Zygote Minimum Time",
+    legend=false
+)
+
+plot(p1, p2, layout=l, size=(1200,500), link=:y, margin=7Plots.mm)
