@@ -82,7 +82,3 @@ function _eigen_norm_phase_rev!(∂V, ::SymTridiagonal{T, Vector{T}}, V) where {
     end
     return ∂V
 end
-
-using Zygote
-λ = c -> norm(eigvals(Symmetric([c[1] 1.0; 1.0 c[2]])) - [1,2])
-Zygote.gradient(λ, [1.0, 3.0])
