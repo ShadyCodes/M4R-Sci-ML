@@ -1,11 +1,13 @@
 using Flux, LinearAlgebra, Zygote, Plots
 
-deg = 4
-R = 10
-sz = 100000
+deg = 3 # Maximum degree of polynomias
+R = 10 # Range of x values
+sz = 50000 # Number of training/validation samples
+
+# Generate training data
 function random_poly_gen(deg)
     p = rand((1,deg+1))
-    x = rand(Float64, p) .* rand((-1,1), p)
+    x = rand(Float64, p) .* 10
     return vcat(x, zeros(deg+1 - length(x)))
 end
 
@@ -27,30 +29,31 @@ function gen_data(deg=10, R=10, sz=10000)
     return x_vals, y_vals
 end
 
+# generate data
 x_train, y_train = gen_data(deg, R, sz)
 x_val, y_val = gen_data(deg, R, sz)
 
-
+# Neural Network
 model = Chain(
-    Dense(Int64(2*R+1),100),
-    Dense(100,100),
-    Dense(100,Int64(deg+1))
+    Dense(Int64(2*R+1),20, relu),
+    Dense(20,20, relu),
+    Dense(20,Int64(deg+1))
 )
 
-ps = Flux.params(model)
-opt = Flux.Optimise.ADAM()
+ps = Flux.params(model) 
+opt = Flux.Optimise.Descent(0.01)
 
-function loss3(x,y)
-    Flux.Losses.mse(model(x),y)
+function loss(x,y)
+    Flux.Losses.mse(model(x),y) 
 end
 
 train_loss_history = []
 val_loss_history = []
 for epoch = 1:1000
-    Flux.train!(loss3, ps, [(x_train, y_train)], opt)
-    train_loss = loss3(x_train, y_train)
+    Flux.train!(loss, ps, [(x_train, y_train)], opt)
+    train_loss = loss(x_train, y_train)
     push!(train_loss_history, train_loss)
-    val_loss = loss3(x_val, y_val)
+    val_loss = loss(x_val, y_val)
     push!(val_loss_history, val_loss)
     println("Epoch = $epoch, loss = $train_loss, val_loss = $val_loss")
 end

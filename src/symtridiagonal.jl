@@ -65,20 +65,3 @@ function eigen_rev!(A::SymTridiagonal, λ, U, ∂λ, ∂U)
     ∂A = SymTridiagonal(diag(Ā), (diag(Ā,1) + diag(Ā,-1))/2)
     return ∂A
 end
-
-_eigen_norm_phase_rev!(∂V, ::SymTridiagonal{T, Vector{T}}, V) where {T<:Real} = ∂V
-# Unecessary as I believe we are considering only real symmetric matrices
-function _eigen_norm_phase_rev!(∂V, ::SymTridiagonal{T, Vector{T}}, V) where {T<:Complex}
-    ϵ = sqrt(eps(real(eltype(V))))
-    @inbounds for i in axes(V, 2)
-        k = size(A,1)
-        v = @view V[:, i]
-        vₖ = real(v[k])
-        if abs(vₖ) > ϵ
-            ∂v = @view ∂V[:, i]
-            ∂c = dot(v, ∂v)
-            ∂v[k] -= im * (imag(∂c) / vₖ)
-        end
-    end
-    return ∂V
-end
